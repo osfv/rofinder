@@ -1,27 +1,74 @@
+from datetime import datetime
+import time
+
+import dateutil.parser
+from rich import box
+from rich.align import Align
 from rich.console import Console
+from rich.live import Live
 from rich.panel import Panel
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich.text import Text
-from rich.align import Align
-from rich import box
-from datetime import datetime
-import dateutil.parser
+
+from version import AUTHOR
 
 console = Console()
 
 class RoFinderUI:
-    def print_banner(self):
-        # Added 'r' to make it a raw string (fixes the SyntaxWarning)
-        banner_text = r"""
+    def _banner_text(self):
+        return r"""
  ____       _____ _           _           
 |  _ \ ___ |  ___(_)_ __   __| | ___ _ __ 
 | |_) / _ \| |_  | | '_ \ / _` |/ _ \ '__|
 |  _ < (_) |  _| | | | | | (_| |  __/ |   
-|_| \_\___/|_|   |_|_| |_|\__,_|\___|_|
+|_| \_\___/|_|   |_|_| |_|\__,_|\___|_|   
         """
-        console.print(Panel(Align.center(Text(banner_text, style="bold cyan")), 
-                            subtitle="[dim]By robloxenjoyer124[/dim]", 
-                            border_style="cyan"))
+
+    def _banner_panel(self, text_style, border_style):
+        banner_text = Text(self._banner_text(), style=text_style)
+        return Panel(
+            Align.center(banner_text),
+            subtitle=f"[dim]By {AUTHOR}[/dim]",
+            border_style=border_style
+        )
+
+    def boot_sequence(self):
+        steps = [
+            ("Warming neon core", 0.22),
+            ("Syncing Roblox endpoints", 0.22),
+            ("Mapping presence grid", 0.22),
+            ("Locking target channel", 0.22),
+        ]
+
+        with Progress(
+            SpinnerColumn(style="bold cyan"),
+            TextColumn("[bold magenta]{task.description}"),
+            BarColumn(bar_width=18, style="cyan"),
+            TextColumn("[dim]{task.percentage:>3.0f}%"),
+            transient=True,
+            console=console
+        ) as progress:
+            for description, duration in steps:
+                task = progress.add_task(description, total=100)
+                for _ in range(10):
+                    progress.advance(task, 10)
+                    time.sleep(duration / 10)
+
+    def play_intro(self):
+        frames = [
+            self._banner_panel("bold cyan", "cyan"),
+            self._banner_panel("bold magenta", "magenta"),
+            self._banner_panel("bold bright_cyan", "bright_cyan"),
+        ]
+
+        with Live(frames[0], refresh_per_second=12, console=console, transient=True) as live:
+            for i in range(18):
+                live.update(frames[i % len(frames)])
+                time.sleep(0.06)
+
+    def print_banner(self):
+        console.print(self._banner_panel("bold cyan", "cyan"))
 
     def create_mini_header(self, user_data):
         verified = "☑️" if user_data.get('hasVerifiedBadge') else ""
@@ -35,7 +82,7 @@ class RoFinderUI:
         created_at = dateutil.parser.parse(user_data['created'])
         now = datetime.now(created_at.tzinfo)
         age = (now - created_at).days
-        
+
         status_text, status_color = "Offline", "red"
         last_online = "Unknown"
 
@@ -44,7 +91,7 @@ class RoFinderUI:
             if ptype == 1: status_text, status_color = "Online", "green"
             elif ptype == 2: status_text, status_color = "Playing", "orange1"
             elif ptype == 3: status_text, status_color = "Studio", "blue"
-            
+
             if presence_data.get('lastOnline'):
                 dt = dateutil.parser.parse(presence_data['lastOnline'])
                 last_online = dt.strftime('%Y-%m-%d %H:%M')
@@ -85,7 +132,7 @@ class RoFinderUI:
             is_online = f.get('isOnline', False)
             status = "● Online" if is_online else "[dim]Offline[/dim]"
             table.add_row(str(f['id']), f['name'], f['displayName'], status)
-        
+
         return table
 
     def create_wearing_table(self, assets):
@@ -93,7 +140,7 @@ class RoFinderUI:
         table.add_column("Type", style="dim")
         table.add_column("Item Name", style="bold white")
         table.add_column("ID", style="cyan")
-        
+
         for asset in assets:
             table.add_row(asset.get('assetType', {}).get('name', 'Asset'), asset['name'], str(asset['id']))
         return table
@@ -102,7 +149,7 @@ class RoFinderUI:
         table = Table(title="Favorite Games", expand=True, box=box.ROUNDED, border_style="green")
         table.add_column("Game Name", style="bold white")
         table.add_column("Creator", style="yellow")
-        
+
         for game in games:
             creator_name = game.get('creator', {}).get('name', 'Unknown')
             table.add_row(game.get('name', 'Unknown'), creator_name)

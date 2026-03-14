@@ -1,10 +1,11 @@
 import requests
+from version import APP_NAME, VERSION, AUTHOR
 
 class RobloxAPI:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": "RoFinder/2.3.0 (robloxenjoyer124)",
+            "User-Agent": f"{APP_NAME}/{VERSION} ({AUTHOR})",
             "Accept": "application/json"
         })
 

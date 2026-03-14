@@ -2,38 +2,38 @@ import json
 import os
 from datetime import datetime
 
+from version import APP_NAME, VERSION
+
 class RoFinderExporter:
     def __init__(self):
         self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def export_json(self, data, filename):
-        
         if not filename.endswith('.json'):
             filename += '.json'
-        
+
         final_data = {
             "meta": {
                 "generated_at": self.timestamp,
-                "tool": "RoFinder v2.2.0"
+                "tool": f"{APP_NAME} v{VERSION}"
             },
             "data": data
         }
-        
+
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(final_data, f, indent=4)
         return os.path.abspath(filename)
 
     def export_txt(self, data, filename):
-
         if not filename.endswith('.txt'):
             filename += '.txt'
 
-        user = data['profile']
-        stats = data['stats']
-        
+        user = data.get('profile', {})
+        stats = data.get('stats', {})
+
         lines = [
             "============================================",
-            f" ROFINDER INTELLIGENCE REPORT",
+            " ROFINDER INTELLIGENCE REPORT",
             f" Generated: {self.timestamp}",
             "============================================",
             "",
@@ -54,17 +54,19 @@ class RoFinderExporter:
             ""
         ]
 
-        if 'assets' in data and data['assets']:
+        if data.get('assets'):
             lines.append("[ CURRENTLY WEARING ]")
             for asset in data['assets']:
-                lines.append(f" - {asset['name']} ({asset['assetType']['name']})")
-                lines.append(f"   Link: https://www.roblox.com/catalog/{asset['id']}")
+                asset_type = asset.get('assetType', {}).get('name', 'Asset')
+                lines.append(f" - {asset.get('name')} ({asset_type})")
+                lines.append(f"   Link: https://www.roblox.com/catalog/{asset.get('id')}")
             lines.append("")
 
-        if 'favorites' in data and data['favorites']:
+        if data.get('favorites'):
             lines.append("[ FAVORITE GAMES ]")
             for game in data['favorites']:
-                lines.append(f" - {game['name']} (By {game['creatorName']})")
+                creator_name = game.get('creatorName') or game.get('creator', {}).get('name', 'Unknown')
+                lines.append(f" - {game.get('name')} (By {creator_name})")
             lines.append("")
 
         with open(filename, 'w', encoding='utf-8') as f:

@@ -2,24 +2,24 @@
 
 # RoFinder v2
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=00ffff,ff00ff&height=180&section=header&text=RoFinder%20v2.2&fontSize=42&fontColor=fff&animation=fadeIn&fontAlignY=32&desc=Advanced%20Roblox%20OSINT%20%26%20Intelligence%20Tool&descAlignY=51&descAlign=50"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=00ffff,ff00ff&height=180&section=header&text=RoFinder%20v2.4&fontSize=42&fontColor=fff&animation=fadeIn&fontAlignY=32&desc=Advanced%20Roblox%20OSINT%20%26%20Intelligence%20Tool&descAlignY=51&descAlign=50"/>
 
 <p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&duration=3000&pause=1000&color=00FFFF&center=true&vCenter=true&multiline=true&repeat=true&width=600&height=100&lines=User+Intelligence+%F0%9F%94%8D+Asset+Forensics+%F0%9F%91%95+Activity+Tracking+%F0%9F%93%8A;Export+Reports+to+JSON+%2F+TXT;Built+by+robloxenjoyer124" alt="Typing SVG" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&duration=3000&pause=1000&color=00FFFF&center=true&vCenter=true&multiline=true&repeat=true&width=600&height=100&lines=User+Intelligence+%F0%9F%94%8D+Asset+Forensics+%F0%9F%91%95+Activity+Tracking+%F0%9F%93%8A;Export+Reports+to+JSON+%2F+TXT;Built+by+osfv" alt="Typing SVG" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/robloxenjoyer124/rofinder/releases">
-    <img src="https://img.shields.io/github/downloads/robloxenjoyer124/rofinder/total?style=for-the-badge&logo=github&color=7C3AED&labelColor=1e1e2e&logoColor=white" alt="Downloads"/>
+  <a href="https://github.com/osfv/rofinder/releases">
+    <img src="https://img.shields.io/github/downloads/osfv/rofinder/total?style=for-the-badge&logo=github&color=7C3AED&labelColor=1e1e2e&logoColor=white" alt="Downloads"/>
   </a>
-  <a href="https://github.com/robloxenjoyer124/rofinder/stargazers">
-    <img src="https://img.shields.io/github/stars/robloxenjoyer124/rofinder?style=for-the-badge&logo=starship&color=FF6B6B&labelColor=1e1e2e&logoColor=white" alt="Stars"/>
+  <a href="https://github.com/osfv/rofinder/stargazers">
+    <img src="https://img.shields.io/github/stars/osfv/rofinder?style=for-the-badge&logo=starship&color=FF6B6B&labelColor=1e1e2e&logoColor=white" alt="Stars"/>
   </a>
-  <a href="https://github.com/robloxenjoyer124/rofinder/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/robloxenjoyer124/rofinder?style=for-the-badge&color=95E1D3&labelColor=1e1e2e" alt="License"/>
+  <a href="https://github.com/osfv/rofinder/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/osfv/rofinder?style=for-the-badge&color=95E1D3&labelColor=1e1e2e" alt="License"/>
   </a>
-  <a href="https://github.com/robloxenjoyer124/rofinder/commits/main">
-    <img src="https://img.shields.io/github/last-commit/robloxenjoyer124/rofinder?style=for-the-badge&color=F8A5C2&labelColor=1e1e2e" alt="Last Commit"/>
+  <a href="https://github.com/osfv/rofinder/commits/main">
+    <img src="https://img.shields.io/github/last-commit/osfv/rofinder?style=for-the-badge&color=F8A5C2&labelColor=1e1e2e" alt="Last Commit"/>
   </a>
 </p>
 
@@ -147,7 +147,7 @@ Featuring a beautiful **Cyberpunk CLI** interface powered by `rich`, RoFinder tr
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/robloxenjoyer124/rofinder.git
+git clone https://github.com/osfv/rofinder.git
 cd rofinder
 ```
 
@@ -206,7 +206,7 @@ python rofinder.py roblox --detailed --save data.json --format json
 |  _ < (_) |  _| | | | | | (_| |  __/ |   
 |_| \_\___/|_|   |_|_| |_|\__,_|\___|_|   
 
-            By robloxenjoyer124
+            By osfv
 
 ╭─ User Intelligence: Roblox ────────────────────────────────────────────────╮
 │                                      │ Metric      │                 Value │
@@ -235,7 +235,7 @@ gantt
     section v2.0
     UI Overhaul (Rich)     :done, 2024-02-01, 15d
     Presence Detection     :done, 2024-02-05, 10d
-    section v2.2 (Current)
+    section v2.4 (Current)
     Export System          :done, 2024-02-15, 5d
     Avatar Forensics       :done, 2024-02-20, 5d
     section Future
@@ -253,6 +253,7 @@ gantt
 
 This project is licensed under the **MIT License**.
 
-Copyright (c) 2024 **robloxenjoyer124**
+Copyright (c) 2026 **osfv**
 
 </div>
+
