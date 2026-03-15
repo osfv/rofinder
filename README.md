@@ -74,4 +74,4 @@ Default backend is `roproxy`. Override with `--api roblox` or `--api roproxy`.
 
 ## 📄 License
 
-MIT © 2026 osfv
+MIT © 2026 [osfv](https://github.com/osfv)

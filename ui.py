@@ -1,3 +1,5 @@
+import itertools
+import random
 from datetime import datetime
 import time
 
@@ -8,7 +10,6 @@ from rich.columns import Columns
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
-from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich.text import Text
 
@@ -39,58 +40,109 @@ THEMES = {
     },
 }
 
+BANNER_LINES = [
+    r" ____       _____ _           _           ",
+    r"|  _ \ ___ |  ___(_)_ __   __| | ___ _ __ ",
+    r"| |_) / _ \| |_  | | '_ \ / _` |/ _ \ '__|",
+    r"|  _ < (_) |  _| | | | | | (_| |  __/ |   ",
+    r"|_| \_\___/|_|   |_|_| |_|\__,_|\___|_|   ",
+]
+
+GLYPHS = "░▒▓█▀▄▌▐╔╗╚╝═║"
+
 
 class RoFinderUI:
-    def __init__(self, theme="neon"):
+    def __init__(self, theme="neon", animate=True):
         self.theme = THEMES.get(theme, THEMES["neon"])
+        self.animate = animate
+
+    # ── internal helpers ──────────────────────────────────────────────
 
     def _banner_text(self):
-        return r"""
- ____       _____ _           _           
-|  _ \ ___ |  ___(_)_ __   __| | ___ _ __ 
-| |_) / _ \| |_  | | '_ \ / _` |/ _ \ '__|
-|  _ < (_) |  _| | | | | | (_| |  __/ |   
-|_| \_\___/|_|   |_|_| |_|\__,_|\___|_|   
-        """
+        return "\n".join(BANNER_LINES)
 
     def _banner_panel(self, text_style, border_style):
         banner_text = Text(self._banner_text(), style=text_style)
         subtitle = f"[dim]By {AUTHOR}[/dim]"
         return Panel(Align.center(banner_text), subtitle=subtitle, border_style=border_style)
 
+    def _scramble_line(self, target, progress):
+        """Return a partially-revealed version of *target*.
+
+        *progress* is a float 0→1.  Characters up to the progress
+        point are revealed; the rest are random glyphs.
+        """
+        reveal = int(len(target) * progress)
+        revealed = target[:reveal]
+        noise = "".join(random.choice(GLYPHS) for _ in range(len(target) - reveal))
+        return revealed + noise
+
+
     def boot_sequence(self):
         steps = [
-            ("Warming neon core", 0.22),
-            ("Syncing Roblox endpoints", 0.22),
-            ("Mapping presence grid", 0.22),
-            ("Locking target channel", 0.22),
+            "Initialising core",
+            "Syncing endpoints",
+            "Mapping presence grid",
+            "Locking channel",
         ]
 
-        with Progress(
-            SpinnerColumn(style=f"bold {self.theme['primary']}"),
-            TextColumn("[bold]{task.description}"),
-            BarColumn(bar_width=18, style=self.theme["primary"]),
-            TextColumn("[dim]{task.percentage:>3.0f}%"),
-            transient=True,
-            console=console,
-        ) as progress:
-            for description, duration in steps:
-                task = progress.add_task(description, total=100)
-                for _ in range(10):
-                    progress.advance(task, 10)
-                    time.sleep(duration / 10)
+        if not self.animate:
+            return
+
+        dots = itertools.cycle(["·  ", "·· ", "···"])
+
+        with Live(console=console, refresh_per_second=20, transient=True) as live:
+            completed = []
+            for i, step in enumerate(steps):
+                for tick in range(8):
+                    lines = Text()
+                    for done in completed:
+                        lines.append(f"  ✓ {done}\n", style=f"bold {self.theme['success']}")
+                    lines.append(f"  {next(dots)} {step}", style=f"{self.theme['muted']}")
+                    live.update(lines)
+                    time.sleep(0.04)
+                completed.append(step)
+
+            lines = Text()
+            for done in completed:
+                lines.append(f"  ✓ {done}\n", style=f"bold {self.theme['success']}")
+            live.update(lines)
+            time.sleep(0.15)
 
     def play_intro(self):
-        frames = [
-            self._banner_panel(f"bold {self.theme['primary']}", self.theme["primary"]),
-            self._banner_panel(f"bold {self.theme['accent']}", self.theme["accent"]),
-            self._banner_panel(f"bold {self.theme['info']}", self.theme["info"]),
-        ]
+        if not self.animate:
+            return
 
-        with Live(frames[0], refresh_per_second=12, console=console, transient=True) as live:
-            for i in range(18):
-                live.update(frames[i % len(frames)])
-                time.sleep(0.06)
+        width = max(len(l) for l in BANNER_LINES)
+
+        with Live(console=console, refresh_per_second=30, transient=True) as live:
+            revealed = []
+            for line in BANNER_LINES:
+                for step in range(6):
+                    progress = (step + 1) / 6
+                    current = self._scramble_line(line, progress)
+                    display = Text()
+                    for prev in revealed:
+                        display.append(prev + "\n", style=f"bold {self.theme['primary']}")
+                    display.append(current, style=f"bold {self.theme['accent']}")
+                    panel = Panel(
+                        Align.center(display),
+                        border_style=self.theme["primary"],
+                        subtitle=f"[dim]By {AUTHOR}[/dim]",
+                    )
+                    live.update(panel)
+                    time.sleep(0.018)
+                revealed.append(line)
+
+            for color in [self.theme["accent"], self.theme["primary"]]:
+                full = Text("\n".join(BANNER_LINES), style=f"bold {color}")
+                panel = Panel(
+                    Align.center(full),
+                    border_style=color,
+                    subtitle=f"[dim]By {AUTHOR}[/dim]",
+                )
+                live.update(panel)
+                time.sleep(0.12)
 
     def print_banner(self):
         console.print(self._banner_panel(f"bold {self.theme['primary']}", self.theme["panel"]))
@@ -101,6 +153,38 @@ class RoFinderUI:
             border_style=self.theme["accent"],
             padding=(0, 2),
         )
+
+    def animate_section_header(self, title):
+        if not self.animate:
+            console.print(self.section_header(title))
+            return
+
+        target = title.upper()
+        with Live(console=console, refresh_per_second=24, transient=True) as live:
+            for step in range(8):
+                progress = (step + 1) / 8
+                decoded = self._scramble_line(target, progress)
+                panel = Panel(
+                    Align.center(Text(decoded, style=f"bold {self.theme['accent']}")),
+                    border_style=self.theme["muted"],
+                    padding=(0, 2),
+                )
+                live.update(panel)
+                time.sleep(0.025)
+
+        console.print(self.section_header(title))
+
+    def _print_table_animated(self, table_builder, rows, delay=0.035):
+        if not self.animate or not rows:
+            console.print(table_builder(rows))
+            return
+
+        with Live(console=console, refresh_per_second=24, transient=True) as live:
+            for i in range(1, len(rows) + 1):
+                live.update(table_builder(rows[:i]))
+                time.sleep(delay)
+
+        console.print(table_builder(rows))
 
     def create_mini_header(self, user_data):
         verified = "VERIFIED" if user_data.get('hasVerifiedBadge') else ""
@@ -177,52 +261,95 @@ class RoFinderUI:
         ]
         console.print(Columns(panels, expand=True, equal=True))
 
-    def create_friends_table(self, friends_list):
-        table = Table(title=f"Friends ({len(friends_list)})", expand=True, box=box.ROUNDED, border_style=self.theme["primary"])
+    def _build_friends_table(self, rows):
+        table = Table(title=f"Friends ({len(rows)})", expand=True, box=box.ROUNDED, border_style=self.theme["primary"])
         table.add_column("User ID", style=self.theme["muted"])
         table.add_column("Username", style="bold")
         table.add_column("Display Name", style=self.theme["info"])
         table.add_column("Status", style=self.theme["success"])
-
-        for friend in friends_list:
+        for friend in rows:
             status = "Online" if friend.get('isOnline') else "Offline"
             table.add_row(str(friend.get('id')), friend.get('name'), friend.get('displayName'), status)
-
         return table
 
-    def create_wearing_table(self, assets):
+    def _build_wearing_table(self, rows):
         table = Table(title="Avatar Assets", expand=True, box=box.ROUNDED, border_style=self.theme["accent"])
         table.add_column("Type", style=self.theme["muted"])
         table.add_column("Item Name", style="bold")
         table.add_column("ID", style=self.theme["info"])
-
-        for asset in assets:
+        for asset in rows:
             asset_type = asset.get('assetType', {}).get('name', 'Asset')
             table.add_row(asset_type, asset.get('name', 'Unknown'), str(asset.get('id')))
         return table
 
-    def create_favorites_table(self, games):
+    def _build_favorites_table(self, rows):
         table = Table(title="Favorite Games", expand=True, box=box.ROUNDED, border_style=self.theme["success"])
         table.add_column("Game Name", style="bold")
         table.add_column("Creator", style=self.theme["info"])
-
-        for game in games:
+        for game in rows:
             creator_name = game.get('creator', {}).get('name', 'Unknown')
             table.add_row(game.get('name', 'Unknown'), creator_name)
         return table
 
-    def create_badges_table(self, badges):
+    def _build_badges_table(self, rows):
         table = Table(title="Recent Badges", expand=True, box=box.ROUNDED, border_style=self.theme["accent"])
         table.add_column("ID", style=self.theme["muted"], width=12)
         table.add_column("Badge Name", style="bold")
-        for badge in badges:
+        for badge in rows:
             table.add_row(str(badge.get('id')), badge.get('name', 'Unknown'))
         return table
 
-    def create_groups_table(self, groups):
+    def _build_groups_table(self, rows):
         table = Table(title="Top Groups", expand=True, box=box.ROUNDED, border_style=self.theme["warning"])
         table.add_column("Group", style="bold")
         table.add_column("Rank", style=self.theme["muted"])
-        for group in groups:
+        for group in rows:
             table.add_row(group.get('group', {}).get('name', 'Unknown'), group.get('role', {}).get('name', 'Member'))
         return table
+
+    def print_friends_table(self, friends_list):
+        self._print_table_animated(self._build_friends_table, friends_list)
+
+    def print_wearing_table(self, assets):
+        self._print_table_animated(self._build_wearing_table, assets)
+
+    def print_favorites_table(self, games):
+        self._print_table_animated(self._build_favorites_table, games)
+
+    def print_badges_table(self, badges):
+        self._print_table_animated(self._build_badges_table, badges)
+
+    def print_groups_table(self, groups):
+        self._print_table_animated(self._build_groups_table, groups)
+
+    def create_friends_table(self, friends_list):
+        return self._build_friends_table(friends_list)
+
+    def create_wearing_table(self, assets):
+        return self._build_wearing_table(assets)
+
+    def create_favorites_table(self, games):
+        return self._build_favorites_table(games)
+
+    def create_badges_table(self, badges):
+        return self._build_badges_table(badges)
+
+    def create_groups_table(self, groups):
+        return self._build_groups_table(groups)
+
+    def outro(self, version_line):
+        if not self.animate:
+            console.print(f"[dim]{version_line}[/dim]", justify="center")
+            return
+
+        bar_chars = "━"
+        bar_width = min(console.width - 4, 48)
+
+        with Live(console=console, refresh_per_second=20, transient=True) as live:
+            for i in range(bar_width + 1):
+                bar = f"[{self.theme['primary']}]{'━' * i}[/{self.theme['primary']}][{self.theme['muted']}]{'─' * (bar_width - i)}[/{self.theme['muted']}]"
+                live.update(Align.center(Text.from_markup(bar)))
+                time.sleep(0.008)
+            time.sleep(0.1)
+
+        console.print(f"[dim]{version_line}[/dim]", justify="center")

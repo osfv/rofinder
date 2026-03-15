@@ -110,7 +110,7 @@ def main():
     api_domain = resolve_api_domain(args.api)
     api = RobloxAPI(api_domain=api_domain)
 
-    ui = RoFinderUI(theme=args.theme)
+    ui = RoFinderUI(theme=args.theme, animate=not args.no_anim and not args.json)
 
     if not args.json and not args.no_anim:
         ui.boot_sequence()
@@ -192,28 +192,28 @@ def main():
             console.print(ui.create_mini_header(user_info))
 
         if full_data.get("assets"):
-            console.print(ui.section_header("Avatar Assets"))
-            console.print(ui.create_wearing_table(full_data["assets"]))
+            ui.animate_section_header("Avatar Assets")
+            ui.print_wearing_table(full_data["assets"])
 
         if full_data.get("friends_list"):
-            console.print(ui.section_header("Friends"))
-            console.print(ui.create_friends_table(full_data["friends_list"]))
+            ui.animate_section_header("Friends")
+            ui.print_friends_table(full_data["friends_list"])
 
         if "favorites" in sections:
-            console.print(ui.section_header("Favorites"))
+            ui.animate_section_header("Favorites")
             favorites = full_data.get("favorites", [])
             if favorites:
-                console.print(ui.create_favorites_table(favorites))
+                ui.print_favorites_table(favorites)
             else:
                 console.print(Panel("[dim yellow]No favorite games found or inventory is private.[/dim yellow]", border_style="yellow"))
 
         if full_data.get("badges"):
-            console.print(ui.section_header("Badges"))
-            console.print(ui.create_badges_table(full_data["badges"]))
+            ui.animate_section_header("Badges")
+            ui.print_badges_table(full_data["badges"])
 
         if full_data.get("groups"):
-            console.print(ui.section_header("Groups"))
-            console.print(ui.create_groups_table(full_data["groups"]))
+            ui.animate_section_header("Groups")
+            ui.print_groups_table(full_data["groups"])
 
     if args.save:
         filename = args.save
@@ -228,7 +228,7 @@ def main():
         console.print(f"\n[bold green]Report saved:[/bold green] {saved_path}")
 
     if not args.json:
-        console.print(f"[dim]{APP_NAME} v{VERSION}[/dim]", justify="center")
+        ui.outro(f"{APP_NAME} v{VERSION}")
 
 
 if __name__ == "__main__":
