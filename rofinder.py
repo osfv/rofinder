@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 
 from rich.console import Console
@@ -11,7 +12,6 @@ from ui import RoFinderUI
 from version import APP_NAME, VERSION
 
 console = Console()
-api = RobloxAPI()
 exporter = RoFinderExporter()
 
 DEFAULT_SECTIONS = {"profile", "stats", "presence", "avatar"}
@@ -38,6 +38,11 @@ SECTION_ALIASES = {
     "profile": "profile",
     "stats": "stats",
     "presence": "presence",
+}
+
+API_DOMAIN_MAP = {
+    "roproxy": "roproxy.com",
+    "roblox": "roblox.com",
 }
 
 
@@ -71,6 +76,13 @@ def parse_sections(args):
     return set(DEFAULT_SECTIONS)
 
 
+def resolve_api_domain(api_choice):
+    if api_choice:
+        return API_DOMAIN_MAP.get(api_choice, "roproxy.com")
+    env_domain = os.getenv("ROFINDER_API_DOMAIN")
+    return env_domain or "roproxy.com"
+
+
 def main():
     parser = argparse.ArgumentParser(description=f"{APP_NAME} v{VERSION} - Remastered Roblox Intelligence")
     parser.add_argument("user", help="Username or User ID")
@@ -90,9 +102,13 @@ def main():
     parser.add_argument("--json", action="store_true", help="Output raw JSON to console (for devs)")
     parser.add_argument("--theme", choices=["neon", "mono"], default="neon", help="UI theme")
     parser.add_argument("--no-anim", action="store_true", help="Disable intro animations")
+    parser.add_argument("--api", choices=["roproxy", "roblox"], help="API backend (default: roproxy)")
 
     args = parser.parse_args()
     sections = parse_sections(args)
+
+    api_domain = resolve_api_domain(args.api)
+    api = RobloxAPI(api_domain=api_domain)
 
     ui = RoFinderUI(theme=args.theme)
 
