@@ -37,7 +37,6 @@ No login. No cookies. 100% read-only.
 | | |
 |---|---|
 | **Resilient API client** | Auto-retry, pagination, response caching, dual backend support (`roblox` / `roproxy`) |
-| **Dashboard UI** | Neon terminal interface with optional animations and a `--mono` theme |
 | **Sectioned intel** | Run only what you need: profile, presence, avatar, assets, friends, favorites, badges, groups |
 | **Flexible exports** | Dump reports to `.json`, `.txt`, or `.md` |
 
