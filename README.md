@@ -1,118 +1,150 @@
+# RoFinder v3
+
 <div align="center">
+  <img src="assets/rofinder.png" alt="RoFinder logo" width="160" />
 
-```
-██████╗  ██████╗ ███████╗██╗███╗   ██╗██████╗ ███████╗██████╗
-██╔══██╗██╔═══██╗██╔════╝██║████╗  ██║██╔══██╗██╔════╝██╔══██╗
-██████╔╝██║   ██║█████╗  ██║██╔██╗ ██║██║  ██║█████╗  ██████╔╝
-██╔══██╗██║   ██║██╔══╝  ██║██║╚██╗██║██║  ██║██╔══╝  ██╔══██╗
-██║  ██║╚██████╔╝██║     ██║██║ ╚████║██████╔╝███████╗██║  ██║
-╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚═╝  ╚═╝
-                                                          V3
-```
+  <h3>Fast Roblox profile intelligence from your terminal.</h3>
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=15&duration=2200&pause=900&color=00FFFF&center=true&vCenter=true&width=520&lines=Remastered+Roblox+OSINT+CLI;Fast+intel+%7C+Clean+reports+%7C+Zero+fluff" alt="Typing SVG" />
+  <p>
+    Resolve a Roblox username or user ID, collect public account intelligence,
+    inspect optional sections, and export clean reports.
+  </p>
 
-<br/>
+  <p>
+    <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white&labelColor=0d0d0d" alt="Python 3.8+" />
+    <img src="https://img.shields.io/badge/Roblox-API-00FFFF?style=for-the-badge&logo=roblox&logoColor=white&labelColor=0d0d0d" alt="Roblox API" />
+    <img src="https://img.shields.io/github/last-commit/osfv/rofinder?style=for-the-badge&labelColor=0d0d0d&color=00ff99" alt="Last commit" />
+  </p>
 
-[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white&labelColor=0d0d0d)](https://python.org)
-[![Roblox API](https://img.shields.io/badge/Roblox-API-00FFFF?style=for-the-badge&logo=roblox&logoColor=white&labelColor=0d0d0d)](https://roblox.com)
-[![Last Commit](https://img.shields.io/github/last-commit/osfv/rofinder?style=for-the-badge&labelColor=0d0d0d&color=00ff99)](https://github.com/osfv/rofinder/commits/main)
-
-**[Install](#-quick-start) · [Usage](#-usage) · [Sections](#-sections) · [Exports](#-exports)**
-
+  <p>
+    <a href="#quick-start">Quick Start</a> ·
+    <a href="#usage">Usage</a> ·
+    <a href="#sections">Sections</a> ·
+    <a href="#exports">Exports</a>
+  </p>
 </div>
 
----
+## What It Does
 
-## What is RoFinder?
+RoFinder is a Roblox OSINT CLI for quick, structured checks on public Roblox accounts. It resolves a target, pulls profile data, and can expand into network stats, presence, avatar assets, friends, favorite games, badges, and groups.
 
-RoFinder is a Roblox OSINT CLI. Point it at a username and get back a full intelligence report. Profile, presence, avatar assets, friends, badges, groups.
+No login. No cookies. No private account access. RoFinder only works with public data available through Roblox-compatible APIs.
 
-No login. No cookies. 100% read-only.
+## Features
 
----
+| Capability | Details |
+| --- | --- |
+| Account resolution | Accepts usernames or numeric Roblox user IDs |
+| Profile intelligence | Username, display name, user ID, creation date, ban status, verified badge |
+| Network stats | Friends, followers, and following counts |
+| Presence checks | Online state, last location, and premium signal when available |
+| Avatar inspection | Headshot URL plus currently worn assets |
+| Optional sections | Friends, favorite games, badges, groups, and custom section selection |
+| Report exports | JSON for tooling, TXT for readable reports, Markdown for notes or sharing |
+| API flexibility | Defaults to `roproxy`, with direct Roblox API support available |
 
-## ✦ Features
-
-| | |
-|---|---|
-| **Resilient API client** | Auto-retry, pagination, response caching, dual backend support (`roblox` / `roproxy`) |
-| **Sectioned intel** | Run only what you need: profile, presence, avatar, assets, friends, favorites, badges, groups |
-| **Flexible exports** | Dump reports to `.json`, `.txt`, or `.md` |
-
----
-
-## ⚡ Quick Start
+## Quick Start
 
 ```bash
 git clone https://github.com/osfv/rofinder.git
 cd rofinder
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 python rofinder.py roblox
 ```
 
-> Requires Python 3.8+
+Requires Python 3.8+.
 
----
-
-## 🔍 Usage
+## Usage
 
 ```bash
-# Full sweep — all sections
+# Default overview: profile, stats, presence, and avatar
+python rofinder.py <username>
+
+# Full sweep across every available section
 python rofinder.py <username> --full
 
-# Pick specific sections
+# Choose exact sections
 python rofinder.py <username> --sections profile,stats,presence,badges,groups
 
-# Avatar assets only
+# Avatar-focused lookup
 python rofinder.py <username> --avatar
 
-# Export a report
+# Friends or favorite games with a result limit
+python rofinder.py <username> --friends --limit 25
+python rofinder.py <username> --games --limit 25
+
+# Machine-readable JSON output
+python rofinder.py <username> --full --json
+
+# Save reports
 python rofinder.py <username> --full --save report.json --format json
-python rofinder.py <username> --full --save report.md   --format md
-python rofinder.py <username> --full --save report.txt  --format txt
+python rofinder.py <username> --full --save report.txt --format txt
+python rofinder.py <username> --full --save report.md --format md
 
-# UI tweaks
-python rofinder.py <username> --no-anim     # disable animations
-python rofinder.py <username> --theme mono  # monochrome terminal theme
+# Cleaner terminal output
+python rofinder.py <username> --no-anim
+python rofinder.py <username> --theme mono
 
-# Switch API backend
-python rofinder.py <username> --api roproxy  # default
-python rofinder.py <username> --api roblox   # direct
+# API backend
+python rofinder.py <username> --api roproxy
+python rofinder.py <username> --api roblox
 ```
 
----
+## Sections
 
-## 🧩 Sections
+Use `--sections` with a comma-separated list:
 
-Use any combination with `--sections`:
+| Section | What it adds |
+| --- | --- |
+| `profile` | Basic account identity and creation metadata |
+| `stats` | Friends, followers, and following counts |
+| `presence` | Online state, last location, and premium signal |
+| `avatar` | Avatar headshot URL |
+| `assets` | Currently worn avatar items |
+| `friends` | Friends list, limited by `--limit` |
+| `favorites` | Favorite games, also available as `games` |
+| `badges` | Recent badges |
+| `groups` | Group memberships and roles |
 
+## Exports
+
+RoFinder can write reports to parent folders that do not exist yet:
+
+```bash
+python rofinder.py <username> --full --save output/report.md --format md
 ```
-profile · stats · presence · avatar · assets · friends · favorites · badges · groups
+
+| Format | Best for |
+| --- | --- |
+| `json` | Structured data for scripts and further processing |
+| `txt` | Clean, human-readable intelligence reports |
+| `md` | Notes, documentation, or shareable Markdown |
+
+## API Backend
+
+RoFinder defaults to `roproxy`:
+
+```bash
+python rofinder.py <username> --api roproxy
 ```
 
----
-
-## 📦 Exports
-
-| Flag | Output |
-|---|---|
-| `--format json` | Structured data, ready for scripts or further processing |
-| `--format txt` | Clean, human-readable report for sharing |
-| `--format md` | Markdown — paste straight into docs or Discord |
-
----
-
-## 🔗 API Backend
-
-RoFinder defaults to **roproxy** to avoid rate limits. Switch to the official API with `--api roblox`.
+Use Roblox domains directly:
 
 ```bash
 python rofinder.py <username> --api roblox
 ```
 
----
+You can also set `ROFINDER_API_DOMAIN` when you need a custom compatible API domain.
 
-## 📄 License
+## Development
+
+```bash
+python -m pip install -r requirements-dev.txt
+pytest -q
+ruff check .
+ruff format --check .
+```
+
+## License
 
 MIT © 2026 [osfv](https://github.com/osfv)
