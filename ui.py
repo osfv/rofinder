@@ -56,8 +56,6 @@ class RoFinderUI:
         self.theme = THEMES.get(theme, THEMES["neon"])
         self.animate = animate
 
-    # ── internal helpers ──────────────────────────────────────────────
-
     def _banner_text(self):
         return "\n".join(BANNER_LINES)
 
