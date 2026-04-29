@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from pathlib import Path
 
 from version import APP_NAME, VERSION, AUTHOR
 
@@ -10,35 +11,36 @@ class RoFinderExporter:
         self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def _normalize_filename(self, filename, ext):
-        if not filename.endswith(ext):
-            return f"{filename}{ext}"
-        return filename
+        path = Path(filename)
+        if path.suffix.lower() != ext:
+            path = Path(f"{path}{ext}")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
 
-    def export_json(self, data, filename):
-        filename = self._normalize_filename(filename, '.json')
-
-        final_data = {
-            "meta": {
-                "generated_at": self.timestamp,
-                "tool": APP_NAME,
-                "version": VERSION,
-                "author": AUTHOR,
-            },
-            "data": data,
-        }
-
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(final_data, f, indent=4)
+    def _write_lines(self, filename, lines):
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
         return os.path.abspath(filename)
 
-    def export_txt(self, data, filename):
-        filename = self._normalize_filename(filename, '.txt')
+    def _profile_stats_status(self, data):
+        return data.get("profile", {}), data.get("stats", {}), data.get("status", {})
 
-        profile = data.get('profile', {})
-        stats = data.get('stats', {})
-        status = data.get('status', {})
+    def _friend_name(self, friend):
+        username = friend.get("name", "Unknown")
+        display_name = friend.get("displayName")
+        if display_name and display_name != username:
+            return f"{display_name} (@{username})"
+        return username
 
-        lines = [
+    def _creator_name(self, game):
+        return game.get("creatorName") or game.get("creator", {}).get("name", "Unknown")
+
+    def _asset_type(self, asset):
+        return asset.get("assetType", {}).get("name", "Asset")
+
+    def _base_txt_lines(self, data):
+        profile, stats, status = self._profile_stats_status(data)
+        return [
             "============================================",
             f" {APP_NAME.upper()} INTELLIGENCE REPORT",
             f" Generated: {self.timestamp}",
@@ -65,51 +67,9 @@ class RoFinderExporter:
             "",
         ]
 
-        assets = data.get('assets') or []
-        if assets:
-            lines.append("[ CURRENTLY WEARING ]")
-            for asset in assets:
-                asset_type = asset.get('assetType', {}).get('name', 'Asset')
-                lines.append(f" - {asset.get('name')} ({asset_type})")
-                lines.append(f"   Link: https://www.roblox.com/catalog/{asset.get('id')}")
-            lines.append("")
-
-        favorites = data.get('favorites') or []
-        if favorites:
-            lines.append("[ FAVORITE GAMES ]")
-            for game in favorites:
-                creator_name = game.get('creatorName') or game.get('creator', {}).get('name', 'Unknown')
-                lines.append(f" - {game.get('name')} (By {creator_name})")
-            lines.append("")
-
-        badges = data.get('badges') or []
-        if badges:
-            lines.append("[ BADGES ]")
-            for badge in badges:
-                lines.append(f" - {badge.get('name')} ({badge.get('id')})")
-            lines.append("")
-
-        groups = data.get('groups') or []
-        if groups:
-            lines.append("[ GROUPS ]")
-            for group in groups:
-                group_name = group.get('group', {}).get('name', 'Unknown')
-                role_name = group.get('role', {}).get('name', 'Member')
-                lines.append(f" - {group_name} ({role_name})")
-            lines.append("")
-
-        with open(filename, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(lines))
-        return os.path.abspath(filename)
-
-    def export_md(self, data, filename):
-        filename = self._normalize_filename(filename, '.md')
-
-        profile = data.get('profile', {})
-        stats = data.get('stats', {})
-        status = data.get('status', {})
-
-        lines = [
+    def _base_md_lines(self, data):
+        profile, stats, status = self._profile_stats_status(data)
+        return [
             f"# {APP_NAME} Intelligence Report",
             "",
             f"- Generated: {self.timestamp}",
@@ -136,38 +96,99 @@ class RoFinderExporter:
             "",
         ]
 
-        assets = data.get('assets') or []
-        if assets:
-            lines.append("## Currently Wearing")
-            for asset in assets:
-                asset_type = asset.get('assetType', {}).get('name', 'Asset')
-                lines.append(f"- {asset.get('name')} ({asset_type})")
-            lines.append("")
+    def _append_section(self, lines, title, rows, formatter):
+        if not rows:
+            return
 
-        favorites = data.get('favorites') or []
-        if favorites:
-            lines.append("## Favorite Games")
-            for game in favorites:
-                creator_name = game.get('creatorName') or game.get('creator', {}).get('name', 'Unknown')
-                lines.append(f"- {game.get('name')} (By {creator_name})")
-            lines.append("")
+        lines.append(title)
+        for row in rows:
+            formatted = formatter(row)
+            if isinstance(formatted, list):
+                lines.extend(formatted)
+            else:
+                lines.append(formatted)
+        lines.append("")
 
-        badges = data.get('badges') or []
-        if badges:
-            lines.append("## Badges")
-            for badge in badges:
-                lines.append(f"- {badge.get('name')} ({badge.get('id')})")
-            lines.append("")
+    def _txt_asset_lines(self, asset):
+        return [
+            f" - {asset.get('name')} ({self._asset_type(asset)})",
+            f"   Link: https://www.roblox.com/catalog/{asset.get('id')}",
+        ]
 
-        groups = data.get('groups') or []
-        if groups:
-            lines.append("## Groups")
-            for group in groups:
-                group_name = group.get('group', {}).get('name', 'Unknown')
-                role_name = group.get('role', {}).get('name', 'Member')
-                lines.append(f"- {group_name} ({role_name})")
-            lines.append("")
+    def _md_asset_line(self, asset):
+        return f"- {asset.get('name')} ({self._asset_type(asset)})"
 
-        with open(filename, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(lines))
+    def _txt_friend_line(self, friend):
+        return f" - {self._friend_name(friend)} ({friend.get('id')})"
+
+    def _md_friend_line(self, friend):
+        return f"- {self._friend_name(friend)} ({friend.get('id')})"
+
+    def _txt_favorite_line(self, game):
+        return f" - {game.get('name')} (By {self._creator_name(game)})"
+
+    def _md_favorite_line(self, game):
+        return f"- {game.get('name')} (By {self._creator_name(game)})"
+
+    def _txt_badge_line(self, badge):
+        return f" - {badge.get('name')} ({badge.get('id')})"
+
+    def _md_badge_line(self, badge):
+        return f"- {badge.get('name')} ({badge.get('id')})"
+
+    def _txt_group_line(self, group):
+        group_name = group.get("group", {}).get("name", "Unknown")
+        role_name = group.get("role", {}).get("name", "Member")
+        return f" - {group_name} ({role_name})"
+
+    def _md_group_line(self, group):
+        group_name = group.get("group", {}).get("name", "Unknown")
+        role_name = group.get("role", {}).get("name", "Member")
+        return f"- {group_name} ({role_name})"
+
+    def export_json(self, data, filename):
+        filename = self._normalize_filename(filename, ".json")
+
+        final_data = {
+            "meta": {
+                "generated_at": self.timestamp,
+                "tool": APP_NAME,
+                "version": VERSION,
+                "author": AUTHOR,
+            },
+            "data": data,
+        }
+
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(final_data, f, indent=4)
         return os.path.abspath(filename)
+
+    def export_txt(self, data, filename):
+        filename = self._normalize_filename(filename, ".txt")
+        lines = self._base_txt_lines(data)
+
+        self._append_section(
+            lines, "[ CURRENTLY WEARING ]", data.get("assets"), self._txt_asset_lines
+        )
+        self._append_section(lines, "[ FRIENDS ]", data.get("friends_list"), self._txt_friend_line)
+        self._append_section(
+            lines, "[ FAVORITE GAMES ]", data.get("favorites"), self._txt_favorite_line
+        )
+        self._append_section(lines, "[ BADGES ]", data.get("badges"), self._txt_badge_line)
+        self._append_section(lines, "[ GROUPS ]", data.get("groups"), self._txt_group_line)
+
+        return self._write_lines(filename, lines)
+
+    def export_md(self, data, filename):
+        filename = self._normalize_filename(filename, ".md")
+        lines = self._base_md_lines(data)
+
+        self._append_section(lines, "## Currently Wearing", data.get("assets"), self._md_asset_line)
+        self._append_section(lines, "## Friends", data.get("friends_list"), self._md_friend_line)
+        self._append_section(
+            lines, "## Favorite Games", data.get("favorites"), self._md_favorite_line
+        )
+        self._append_section(lines, "## Badges", data.get("badges"), self._md_badge_line)
+        self._append_section(lines, "## Groups", data.get("groups"), self._md_group_line)
+
+        return self._write_lines(filename, lines)

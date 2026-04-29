@@ -77,7 +77,6 @@ class RoFinderUI:
         noise = "".join(random.choice(GLYPHS) for _ in range(len(target) - reveal))
         return revealed + noise
 
-
     def boot_sequence(self):
         steps = [
             "Initialising core",
@@ -112,8 +111,6 @@ class RoFinderUI:
     def play_intro(self):
         if not self.animate:
             return
-
-        width = max(len(l) for l in BANNER_LINES)
 
         with Live(console=console, refresh_per_second=30, transient=True) as live:
             revealed = []
@@ -187,8 +184,12 @@ class RoFinderUI:
         console.print(table_builder(rows))
 
     def create_mini_header(self, user_data):
-        verified = "VERIFIED" if user_data.get('hasVerifiedBadge') else ""
-        verified_text = f" [bold {self.theme['info']}]{verified}[/bold {self.theme['info']}]" if verified else ""
+        verified = "VERIFIED" if user_data.get("hasVerifiedBadge") else ""
+        verified_text = (
+            f" [bold {self.theme['info']}]{verified}[/bold {self.theme['info']}]"
+            if verified
+            else ""
+        )
         return Panel(
             f"[bold white]Target:[/bold white] [yellow]@{user_data.get('name')}[/yellow]{verified_text} [dim]({user_data.get('id')})[/dim]",
             border_style=self.theme["panel"],
@@ -196,17 +197,17 @@ class RoFinderUI:
         )
 
     def _profile_panel(self, user_data):
-        created_at = dateutil.parser.parse(user_data['created'])
+        created_at = dateutil.parser.parse(user_data["created"])
         now = datetime.now(created_at.tzinfo)
         age_days = (now - created_at).days
 
         table = Table.grid(padding=(0, 1))
         table.add_row("Username", f"@{user_data.get('name')}")
-        table.add_row("Display", user_data.get('displayName'))
-        table.add_row("User ID", str(user_data.get('id')))
-        table.add_row("Created", user_data.get('created'))
+        table.add_row("Display", user_data.get("displayName"))
+        table.add_row("User ID", str(user_data.get("id")))
+        table.add_row("Created", user_data.get("created"))
         table.add_row("Account Age", f"{age_days} days")
-        table.add_row("Banned", str(user_data.get('isBanned')))
+        table.add_row("Banned", str(user_data.get("isBanned")))
 
         return Panel(table, title="Profile", border_style=self.theme["panel"], box=box.ROUNDED)
 
@@ -214,9 +215,9 @@ class RoFinderUI:
         table = Table(show_header=True, box=box.SIMPLE_HEAD)
         table.add_column("Stat", style=self.theme["accent"])
         table.add_column("Value", justify="right")
-        table.add_row("Friends", str(stats.get('friends', 0)))
-        table.add_row("Followers", str(stats.get('followers', 0)))
-        table.add_row("Following", str(stats.get('following', 0)))
+        table.add_row("Friends", str(stats.get("friends", 0)))
+        table.add_row("Followers", str(stats.get("followers", 0)))
+        table.add_row("Following", str(stats.get("following", 0)))
         return Panel(table, title="Network", border_style=self.theme["panel"], box=box.ROUNDED)
 
     def _presence_panel(self, presence_data, is_premium):
@@ -224,7 +225,7 @@ class RoFinderUI:
         last_online = "Unknown"
 
         if presence_data:
-            ptype = presence_data.get('userPresenceType', 0)
+            ptype = presence_data.get("userPresenceType", 0)
             if ptype == 1:
                 status_text, status_color = "Online", self.theme["success"]
             elif ptype == 2:
@@ -232,9 +233,9 @@ class RoFinderUI:
             elif ptype == 3:
                 status_text, status_color = "Studio", self.theme["info"]
 
-            if presence_data.get('lastOnline'):
-                dt = dateutil.parser.parse(presence_data['lastOnline'])
-                last_online = dt.strftime('%Y-%m-%d %H:%M')
+            if presence_data.get("lastOnline"):
+                dt = dateutil.parser.parse(presence_data["lastOnline"])
+                last_online = dt.strftime("%Y-%m-%d %H:%M")
 
         premium_text = "Yes" if is_premium else "No"
 
@@ -262,49 +263,82 @@ class RoFinderUI:
         console.print(Columns(panels, expand=True, equal=True))
 
     def _build_friends_table(self, rows):
-        table = Table(title=f"Friends ({len(rows)})", expand=True, box=box.ROUNDED, border_style=self.theme["primary"])
+        table = Table(
+            title=f"Friends ({len(rows)})",
+            expand=True,
+            box=box.ROUNDED,
+            border_style=self.theme["primary"],
+        )
         table.add_column("User ID", style=self.theme["muted"])
         table.add_column("Username", style="bold")
         table.add_column("Display Name", style=self.theme["info"])
         table.add_column("Status", style=self.theme["success"])
         for friend in rows:
-            status = "Online" if friend.get('isOnline') else "Offline"
-            table.add_row(str(friend.get('id')), friend.get('name'), friend.get('displayName'), status)
+            status = "Online" if friend.get("isOnline") else "Offline"
+            table.add_row(
+                str(friend.get("id")),
+                friend.get("name"),
+                friend.get("displayName"),
+                status,
+            )
         return table
 
     def _build_wearing_table(self, rows):
-        table = Table(title="Avatar Assets", expand=True, box=box.ROUNDED, border_style=self.theme["accent"])
+        table = Table(
+            title="Avatar Assets",
+            expand=True,
+            box=box.ROUNDED,
+            border_style=self.theme["accent"],
+        )
         table.add_column("Type", style=self.theme["muted"])
         table.add_column("Item Name", style="bold")
         table.add_column("ID", style=self.theme["info"])
         for asset in rows:
-            asset_type = asset.get('assetType', {}).get('name', 'Asset')
-            table.add_row(asset_type, asset.get('name', 'Unknown'), str(asset.get('id')))
+            asset_type = asset.get("assetType", {}).get("name", "Asset")
+            table.add_row(asset_type, asset.get("name", "Unknown"), str(asset.get("id")))
         return table
 
     def _build_favorites_table(self, rows):
-        table = Table(title="Favorite Games", expand=True, box=box.ROUNDED, border_style=self.theme["success"])
+        table = Table(
+            title="Favorite Games",
+            expand=True,
+            box=box.ROUNDED,
+            border_style=self.theme["success"],
+        )
         table.add_column("Game Name", style="bold")
         table.add_column("Creator", style=self.theme["info"])
         for game in rows:
-            creator_name = game.get('creator', {}).get('name', 'Unknown')
-            table.add_row(game.get('name', 'Unknown'), creator_name)
+            creator_name = game.get("creator", {}).get("name", "Unknown")
+            table.add_row(game.get("name", "Unknown"), creator_name)
         return table
 
     def _build_badges_table(self, rows):
-        table = Table(title="Recent Badges", expand=True, box=box.ROUNDED, border_style=self.theme["accent"])
+        table = Table(
+            title="Recent Badges",
+            expand=True,
+            box=box.ROUNDED,
+            border_style=self.theme["accent"],
+        )
         table.add_column("ID", style=self.theme["muted"], width=12)
         table.add_column("Badge Name", style="bold")
         for badge in rows:
-            table.add_row(str(badge.get('id')), badge.get('name', 'Unknown'))
+            table.add_row(str(badge.get("id")), badge.get("name", "Unknown"))
         return table
 
     def _build_groups_table(self, rows):
-        table = Table(title="Top Groups", expand=True, box=box.ROUNDED, border_style=self.theme["warning"])
+        table = Table(
+            title="Top Groups",
+            expand=True,
+            box=box.ROUNDED,
+            border_style=self.theme["warning"],
+        )
         table.add_column("Group", style="bold")
         table.add_column("Rank", style=self.theme["muted"])
         for group in rows:
-            table.add_row(group.get('group', {}).get('name', 'Unknown'), group.get('role', {}).get('name', 'Member'))
+            table.add_row(
+                group.get("group", {}).get("name", "Unknown"),
+                group.get("role", {}).get("name", "Member"),
+            )
         return table
 
     def print_friends_table(self, friends_list):
@@ -342,7 +376,6 @@ class RoFinderUI:
             console.print(f"[dim]{version_line}[/dim]", justify="center")
             return
 
-        bar_chars = "━"
         bar_width = min(console.width - 4, 48)
 
         with Live(console=console, refresh_per_second=20, transient=True) as live:

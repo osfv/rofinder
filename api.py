@@ -13,6 +13,16 @@ CACHE_TTL_SECONDS = 60
 API_DOMAIN = os.getenv("ROFINDER_API_DOMAIN", "roproxy.com")
 
 
+class RobloxAPIError(RuntimeError):
+    """Diagnostic details for the last failed Roblox API request."""
+
+    def __init__(self, method, url, detail):
+        self.method = method.upper()
+        self.url = url
+        self.detail = str(detail)
+        super().__init__(f"{self.method} {self.url} failed: {self.detail}")
+
+
 def _build_retry():
     try:
         return Retry(
@@ -43,16 +53,19 @@ class RobloxAPI:
         self.timeout = timeout
         self.api_domain = api_domain
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": f"{APP_NAME}/{VERSION} ({AUTHOR})",
-            "Accept": "application/json"
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": f"{APP_NAME}/{VERSION} ({AUTHOR})",
+                "Accept": "application/json",
+            }
+        )
 
         retry = _build_retry()
         adapter = HTTPAdapter(max_retries=retry, pool_connections=10, pool_maxsize=10)
         self.session.mount("https://", adapter)
 
         self._cache = {}
+        self.last_error = None
 
     def _url(self, service, path):
         return f"https://{service}.{self.api_domain}{path}"
@@ -71,16 +84,24 @@ class RobloxAPI:
         self._cache[key] = (value, time.time() + ttl)
 
     def _request(self, method, url, **kwargs):
+        self.last_error = None
         try:
             response = self.session.request(method, url, timeout=self.timeout, **kwargs)
             response.raise_for_status()
             if response.headers.get("content-type", "").startswith("application/json"):
                 return response.json()
             return None
-        except requests.RequestException:
+        except requests.RequestException as exc:
+            self.last_error = RobloxAPIError(method, url, exc)
+            return None
+        except ValueError as exc:
+            self.last_error = RobloxAPIError(method, url, f"invalid JSON response: {exc}")
             return None
 
     def _paginate(self, base_url, limit):
+        if limit <= 0:
+            return []
+
         results = []
         cursor = None
         page_size = min(max(limit, 1), 100)
@@ -91,8 +112,8 @@ class RobloxAPI:
             data = self._request("GET", url)
             if not data:
                 break
-            results.extend(data.get('data', []))
-            cursor = data.get('nextPageCursor')
+            results.extend(data.get("data", []))
+            cursor = data.get("nextPageCursor")
             if not cursor:
                 break
 
@@ -116,8 +137,8 @@ class RobloxAPI:
     def get_id_by_username(self, username):
         payload = {"usernames": [username], "excludeBannedUsers": False}
         data = self._request("POST", self._url("users", "/v1/usernames/users"), json=payload)
-        results = data.get('data', []) if data else []
-        return results[0].get('id') if results else None
+        results = data.get("data", []) if data else []
+        return results[0].get("id") if results else None
 
     def get_user_info(self, user_id):
         cache_key = f"user:{user_id}"
@@ -134,25 +155,25 @@ class RobloxAPI:
         data = self._request("GET", self._url("premium", f"/v1/users/{user_id}/premium-features"))
         if not data:
             return False
-        return data.get('subscriptionProductModel', {}).get('renewalPeriod') is not None
+        return data.get("subscriptionProductModel", {}).get("renewalPeriod") is not None
 
     def get_presence(self, user_id):
         payload = {"userIds": [user_id]}
         data = self._request("POST", self._url("presence", "/v1/presence/users"), json=payload)
-        presences = data.get('userPresences', []) if data else []
+        presences = data.get("userPresences", []) if data else []
         return presences[0] if presences else None
 
     def get_friends_count(self, user_id):
         data = self._request("GET", self._url("friends", f"/v1/users/{user_id}/friends/count"))
-        return data.get('count', 0) if data else 0
+        return data.get("count", 0) if data else 0
 
     def get_followers_count(self, user_id):
         data = self._request("GET", self._url("friends", f"/v1/users/{user_id}/followers/count"))
-        return data.get('count', 0) if data else 0
+        return data.get("count", 0) if data else 0
 
     def get_following_count(self, user_id):
         data = self._request("GET", self._url("friends", f"/v1/users/{user_id}/following/count"))
-        return data.get('count', 0) if data else 0
+        return data.get("count", 0) if data else 0
 
     def get_friends_list(self, user_id, limit=50):
         base_url = self._url("friends", f"/v1/users/{user_id}/friends?sortOrder=Asc")
@@ -164,7 +185,7 @@ class RobloxAPI:
 
     def get_groups(self, user_id, limit=10):
         data = self._request("GET", self._url("groups", f"/v1/users/{user_id}/groups/roles"))
-        groups = data.get('data', []) if data else []
+        groups = data.get("data", []) if data else []
         return groups[:limit]
 
     def get_avatar_thumbnail(self, user_id, size="720x720"):
@@ -173,17 +194,19 @@ class RobloxAPI:
         if cached:
             return cached
 
-        path = f"/v1/users/avatar-headshot?userIds={user_id}&size={size}&format=Png&isCircular=false"
+        path = (
+            f"/v1/users/avatar-headshot?userIds={user_id}&size={size}&format=Png&isCircular=false"
+        )
         data = self._request("GET", self._url("thumbnails", path))
-        records = data.get('data', []) if data else []
-        image_url = records[0].get('imageUrl') if records else "N/A"
+        records = data.get("data", []) if data else []
+        image_url = records[0].get("imageUrl") if records else "N/A"
         if image_url:
             self._cache_set(cache_key, image_url)
         return image_url
 
     def get_currently_wearing(self, user_id):
         data = self._request("GET", self._url("avatar", f"/v1/users/{user_id}/avatar"))
-        return data.get('assets', []) if data else []
+        return data.get("assets", []) if data else []
 
     def get_favorites(self, user_id, limit=50):
         base_url = self._url("games", f"/v2/users/{user_id}/favorite/games?sortOrder=Desc")
