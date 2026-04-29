@@ -43,6 +43,16 @@ No login. No cookies. No private account access. RoFinder only works with public
 | Report exports | JSON for tooling, TXT for readable reports, Markdown for notes or sharing |
 | API flexibility | Defaults to `roproxy`, with direct Roblox API support available |
 
+## Built With
+
+<p>
+  <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/Rich-terminal-111827?style=flat-square&logo=windowsterminal&logoColor=white" alt="Rich terminal UI" />
+  <img src="https://img.shields.io/badge/Requests-API_client-20232A?style=flat-square&logo=python&logoColor=white" alt="Requests API client" />
+  <img src="https://img.shields.io/badge/JSON-export-000000?style=flat-square&logo=json&logoColor=white" alt="JSON export" />
+  <img src="https://img.shields.io/badge/Markdown-export-000000?style=flat-square&logo=markdown&logoColor=white" alt="Markdown export" />
+</p>
+
 ## Quick Start
 
 ```bash
